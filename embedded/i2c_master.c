@@ -51,7 +51,6 @@ HAL_GPIO_PIN(SDA,             A, 17);
 #define I2C_SERCOM_CLK_GEN    0
 #define I2C_SERCOM_APBCMASK   PM_APBCMASK_SERCOM1
 */
-#define I2C_ADDRESS           (0x54 << 1)
 
 enum
 {
@@ -80,7 +79,7 @@ void i2c_init(void)
   I2C_SERCOM->I2CM.CTRLB.reg = SERCOM_I2CM_CTRLB_SMEN;
   while (I2C_SERCOM->I2CM.SYNCBUSY.reg);
 
-  I2C_SERCOM->I2CM.BAUD.reg = SERCOM_I2CM_BAUD_BAUD(48);
+  I2C_SERCOM->I2CM.BAUD.reg = SERCOM_I2CM_BAUD_BAUD(230); // 48
   while (I2C_SERCOM->I2CM.SYNCBUSY.reg);
 
   I2C_SERCOM->I2CM.CTRLA.reg = SERCOM_I2CM_CTRLA_ENABLE |
@@ -112,7 +111,12 @@ bool i2c_start(int addr)
 //-----------------------------------------------------------------------------
 bool i2c_stop(void)
 {
-  I2C_SERCOM->I2CM.CTRLB.reg |= SERCOM_I2CM_CTRLB_CMD(3);
+  if ((I2C_SERCOM->I2CM.INTFLAG.reg & SERCOM_I2CM_INTFLAG_MB) ||
+      (I2C_SERCOM->I2CM.INTFLAG.reg & SERCOM_I2CM_INTFLAG_SB))
+  {
+    I2C_SERCOM->I2CM.CTRLB.reg |= SERCOM_I2CM_CTRLB_CMD(3);
+  }
+
   return true;
 }
 
@@ -122,12 +126,12 @@ bool i2c_read_byte(uint8_t *byte, bool last)
   while (0 == (I2C_SERCOM->I2CM.INTFLAG.reg & SERCOM_I2CM_INTFLAG_SB));
 
   if (last)
-    I2C_SERCOM->I2CM.CTRLB.reg |= SERCOM_I2CM_CTRLB_ACKACT;
+    I2C_SERCOM->I2CM.CTRLB.reg |= SERCOM_I2CM_CTRLB_ACKACT | SERCOM_I2CM_CTRLB_CMD(3);
   else
     I2C_SERCOM->I2CM.CTRLB.reg &= ~SERCOM_I2CM_CTRLB_ACKACT;
 
   *byte = I2C_SERCOM->I2CM.DATA.reg;
-  
+
   return true;
 }
 
