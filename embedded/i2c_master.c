@@ -64,11 +64,11 @@ enum
 void i2c_init(void)
 {
   HAL_GPIO_SDA_out();
-  HAL_GPIO_SDA_pullup();
+  HAL_GPIO_SDA_pullen(1);
   HAL_GPIO_SDA_pmuxen(I2C_SERCOM_PMUX);
 
   HAL_GPIO_SCL_out();
-  HAL_GPIO_SDA_pullup();
+  HAL_GPIO_SDA_pullen(1);
   HAL_GPIO_SCL_pmuxen(I2C_SERCOM_PMUX);
 
   PM->APBCMASK.reg |= I2C_SERCOM_APBCMASK;

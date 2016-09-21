@@ -26,21 +26,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _I2C_MASTER_H_
-#define _I2C_MASTER_H_
+#ifndef _GPIO_H_
+#define _GPIO_H_
 
 /*- Includes ----------------------------------------------------------------*/
-#include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 /*- Prototypes --------------------------------------------------------------*/
-void i2c_init(void);
-bool i2c_start(int addr);
-bool i2c_stop(void);
-bool i2c_read_byte(uint8_t *byte, bool last);
-bool i2c_write_byte(uint8_t byte);
-bool i2c_busy(int addr);
+void gpio_init(void);
+void gpio_configure(int index, int conf);
+int gpio_read(int index);
+void gpio_write(int index, int value);
 
-#endif // _I2C_MASTER_H_
+#endif // _GPIO_H_
 

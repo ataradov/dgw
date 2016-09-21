@@ -37,21 +37,25 @@
 #include "debug.h"
 #include "usb.h"
 #include "i2c_master.h"
+#include "gpio.h"
 
 /*- Definitions -------------------------------------------------------------*/
 HAL_GPIO_PIN(LED,      B, 30)
-HAL_GPIO_PIN(BUTTON,   A, 15)
 
 #define APP_EP_SEND    1
 #define APP_EP_RECV    2
 
 enum
 {
-  CMD_I2C_INIT,
-  CMD_I2C_START,
-  CMD_I2C_STOP,
-  CMD_I2C_READ,
-  CMD_I2C_WRITE,
+  CMD_I2C_INIT     = 0x00,
+  CMD_I2C_START    = 0x01,
+  CMD_I2C_STOP     = 0x02,
+  CMD_I2C_READ     = 0x03,
+  CMD_I2C_WRITE    = 0x04,
+
+  CMD_GPIO_CONFIG  = 0x10,
+  CMD_GPIO_READ    = 0x11,
+  CMD_GPIO_WRITE   = 0x12,
 };
 
 /*- Variables ---------------------------------------------------------------*/
@@ -125,7 +129,23 @@ static void sys_init(void)
 
   asm volatile ("cpsie i");
 }
+/*
+//-----------------------------------------------------------------------------
+static uint32_t get_uint32(uint8_t *data)
+{
+  return ((uint32_t)data[0] << 0) | ((uint32_t)data[1] << 8) |
+         ((uint32_t)data[2] << 16) | ((uint32_t)data[3] << 24);
+}
 
+//-----------------------------------------------------------------------------
+static void set_uint32(uint8_t *data, uint32_t value)
+{
+  data[0] = (value >> 0) & 0xff;
+  data[1] = (value >> 8) & 0xff;
+  data[2] = (value >> 16) & 0xff;
+  data[3] = (value >> 24) & 0xff;
+}
+*/
 //-----------------------------------------------------------------------------
 void usb_send_callback(void)
 {
@@ -135,10 +155,10 @@ void usb_send_callback(void)
 void usb_recv_callback(void)
 {
   app_response_buffer[0] = app_usb_recv_buffer[0];
+  app_response_buffer[1] = true;
 
   if (CMD_I2C_INIT == app_usb_recv_buffer[0])
   {
-    app_response_buffer[1] = 1;
   }
   else if (CMD_I2C_START == app_usb_recv_buffer[0])
   {
@@ -152,8 +172,6 @@ void usb_recv_callback(void)
   else if (CMD_I2C_READ == app_usb_recv_buffer[0])
   {
     int i;
-
-    app_response_buffer[1] = true;
 
     for (i = 0; i < app_usb_recv_buffer[1]; i++)
     {
@@ -172,8 +190,6 @@ void usb_recv_callback(void)
   {
     int i;
 
-    app_response_buffer[1] = true;
-
     for (i = 0; i < app_usb_recv_buffer[1]; i++)
     {
       if (!i2c_write_byte(app_usb_recv_buffer[2 + i]))
@@ -184,6 +200,41 @@ void usb_recv_callback(void)
     }
 
     app_response_buffer[2] = i;
+  }
+  else if (CMD_GPIO_CONFIG == app_usb_recv_buffer[0])
+  {
+    int cnt = app_usb_recv_buffer[1];
+
+    for (int i = 0; i < cnt; i++)
+    {
+      int index = app_usb_recv_buffer[2 + i*2];
+      int conf = app_usb_recv_buffer[3 + i*2];
+
+      gpio_configure(index, conf);
+    }
+  }
+  else if (CMD_GPIO_READ == app_usb_recv_buffer[0])
+  {
+    int cnt = app_usb_recv_buffer[1];
+
+    for (int i = 0; i < cnt; i++)
+    {
+      int index = app_usb_recv_buffer[2 + i];
+
+      app_response_buffer[2 + i] = gpio_read(index);
+    }
+  }
+  else if (CMD_GPIO_WRITE == app_usb_recv_buffer[0])
+  {
+    int cnt = app_usb_recv_buffer[1];
+
+    for (int i = 0; i < cnt; i++)
+    {
+      int index = app_usb_recv_buffer[2 + i*2];
+      int value = app_usb_recv_buffer[3 + i*2];
+
+      gpio_write(index, value);
+    }
   }
 
   usb_send(APP_EP_SEND, app_response_buffer, sizeof(app_response_buffer), usb_send_callback);
@@ -209,18 +260,11 @@ int main(void)
   debug_puts("\r\n--- start ---\r\n");
 
   usb_init();
-
-  debug_puts("USB init done\r\n");
-
   i2c_init();
-
-  debug_puts("I2C init done\r\n");
+  gpio_init();
 
   HAL_GPIO_LED_out();
   HAL_GPIO_LED_clr();
-
-  HAL_GPIO_BUTTON_in();
-  HAL_GPIO_BUTTON_pullup();
 
   while (1)
   {
