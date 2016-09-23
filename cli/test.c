@@ -43,6 +43,7 @@
 #define TEMP_ADDR     (0x4f << 1)
 #define GPIO_1        6
 #define GPIO_2        7
+#define GPIO_SD       5
 #define GPIO_LED      2
 
 /*- Implementations ---------------------------------------------------------*/
@@ -59,7 +60,7 @@ static void eeprom_test(void)
   for (int i = 0; i < (int)sizeof(buf); i++) 
     buf[i] = rand();
 
-  printf("Writing 1KB of data... ");
+  verbose("Writing 1KB of data... ");
 
   for (int addr = 0; addr < (int)sizeof(buf); addr += 16)
   {
@@ -71,12 +72,12 @@ static void eeprom_test(void)
 
     while (!i2c_write(i2c_addr, data, 17));
 
-    printf(".");
+    verbose(".");
   }
 
-  printf("done\n");
+  verbose("done\n");
 
-  printf("Verifying... ");
+  verbose("Verifying... ");
 
   for (int addr = 0; addr < (int)sizeof(buf); addr += 16)
   {
@@ -97,10 +98,10 @@ static void eeprom_test(void)
       }
     }
 
-    printf(".");
+    verbose(".");
   }
 
-  printf("done\n");
+  verbose("done\n");
 
   printf("\n");
 }
@@ -138,6 +139,7 @@ static void gpio_test(void)
 
   printf("--- GPIO Test ---\n");
 
+  // GPIO
   gpio_configure(GPIO_1, GPIO_CONF_OUTPUT | GPIO_CONF_SET);
   gpio_configure(GPIO_2, GPIO_CONF_INPUT | GPIO_CONF_PULLUP);
 
@@ -149,17 +151,23 @@ static void gpio_test(void)
 
   printf("GPIO 1 and 2 are %s\n", shorted ? "shorted" : "open");
 
-  printf("Blinking an LED... ");
+  // SD Card Detect
+  gpio_configure(GPIO_SD, GPIO_CONF_INPUT | GPIO_CONF_PULLUP);
+
+  printf("SD Card is %s\n", gpio_read(GPIO_SD) ? "not inserted" : "inserted");
+
+  // LED
+  verbose("Blinking an LED... ");
 
   gpio_configure(GPIO_LED, GPIO_CONF_OUTPUT | GPIO_CONF_CLR);
 
   for (int i = 0; i < 5; i++)
   {
-    printf("on ");
+    verbose("on ");
     gpio_write(GPIO_LED, 0);
     usleep(500*1000);
 
-    printf("off ");
+    verbose("off ");
     gpio_write(GPIO_LED, 1);
     usleep(500*1000);
   }

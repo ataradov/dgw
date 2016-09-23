@@ -53,7 +53,7 @@ static const char *short_options = "hbls:";
 
 static char *g_serial = NULL;
 static bool g_list = false;
-static bool g_verbose = false;
+static bool g_verbose = true; // TODO: false
 
 /*- Implementations ---------------------------------------------------------*/
 

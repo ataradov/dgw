@@ -40,7 +40,7 @@
 #include <linux/input.h>
 #include <linux/hidraw.h>
 #include <libudev.h>
-#include "edbg.h"
+#include "main.h"
 #include "dgw.h"
 
 /*- Variables ---------------------------------------------------------------*/
