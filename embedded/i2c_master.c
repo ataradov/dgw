@@ -37,20 +37,13 @@
 /*- Definitions -------------------------------------------------------------*/
 HAL_GPIO_PIN(SDA,             A, 8);
 HAL_GPIO_PIN(SCL,             A, 9);
-#define I2C_SERCOM            SERCOM0
-#define I2C_SERCOM_PMUX       PORT_PMUX_PMUXE_C_Val
-#define I2C_SERCOM_GCLK_ID    SERCOM0_GCLK_ID_CORE
+#define I2C_SERCOM            SERCOM2
+#define I2C_SERCOM_PMUX       PORT_PMUX_PMUXE_D_Val
+#define I2C_SERCOM_GCLK_ID    SERCOM2_GCLK_ID_CORE
 #define I2C_SERCOM_CLK_GEN    0
-#define I2C_SERCOM_APBCMASK   PM_APBCMASK_SERCOM0
-/*
-HAL_GPIO_PIN(SCL,             A, 16);
-HAL_GPIO_PIN(SDA,             A, 17);
-#define I2C_SERCOM            SERCOM1
-#define I2C_SERCOM_PMUX       PORT_PMUX_PMUXE_C_Val
-#define I2C_SERCOM_GCLK_ID    SERCOM1_GCLK_ID_CORE
-#define I2C_SERCOM_CLK_GEN    0
-#define I2C_SERCOM_APBCMASK   PM_APBCMASK_SERCOM1
-*/
+#define I2C_SERCOM_APBCMASK   PM_APBCMASK_SERCOM2
+
+#define T_RISE                215e-9 // Depends on the board, actually
 
 enum
 {
@@ -61,8 +54,17 @@ enum
 /*- Implementations ---------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
-void i2c_init(void)
+int i2c_init(int freq)
 {
+  int baud = ((float)F_CPU / freq - (float)F_CPU * T_RISE - 10.0) / 2.0;
+
+  if (baud < 0)
+    baud = 0;
+  else if (baud > 255)
+    baud = 255;
+
+  freq = (float)F_CPU / (2.0 * (5.0 + baud) + (float)F_CPU * T_RISE);
+
   HAL_GPIO_SDA_out();
   HAL_GPIO_SDA_pullen(1);
   HAL_GPIO_SDA_pmuxen(I2C_SERCOM_PMUX);
@@ -76,10 +78,13 @@ void i2c_init(void)
   GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(I2C_SERCOM_GCLK_ID) |
       GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN(I2C_SERCOM_CLK_GEN);
 
+  I2C_SERCOM->I2CM.CTRLA.reg = SERCOM_I2CM_CTRLA_SWRST;
+  while (I2C_SERCOM->I2CM.CTRLA.reg & SERCOM_I2CM_CTRLA_SWRST);
+
   I2C_SERCOM->I2CM.CTRLB.reg = SERCOM_I2CM_CTRLB_SMEN;
   while (I2C_SERCOM->I2CM.SYNCBUSY.reg);
 
-  I2C_SERCOM->I2CM.BAUD.reg = SERCOM_I2CM_BAUD_BAUD(230); // 48
+  I2C_SERCOM->I2CM.BAUD.reg = SERCOM_I2CM_BAUD_BAUD(baud);
   while (I2C_SERCOM->I2CM.SYNCBUSY.reg);
 
   I2C_SERCOM->I2CM.CTRLA.reg = SERCOM_I2CM_CTRLA_ENABLE |
@@ -89,6 +94,8 @@ void i2c_init(void)
 
   I2C_SERCOM->I2CM.STATUS.reg |= SERCOM_I2CM_STATUS_BUSSTATE(1);
   while (I2C_SERCOM->I2CM.SYNCBUSY.reg);
+
+  return freq;
 }
 
 //-----------------------------------------------------------------------------
@@ -166,3 +173,4 @@ bool i2c_busy(int addr)
 
   return busy;
 }
+

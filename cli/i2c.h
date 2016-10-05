@@ -34,6 +34,7 @@
 #include <stdbool.h>
 
 /*- Prototypes --------------------------------------------------------------*/
+int i2c_init(int freq);
 bool i2c_write(int addr, uint8_t *data, int size);
 bool i2c_read(int addr, uint8_t *data, int size);
 bool i2c_write_read(int addr, uint8_t *wdata, int wsize, uint8_t *rdata, int rsize);

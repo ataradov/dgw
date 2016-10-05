@@ -39,11 +39,11 @@
 /*- Definitions -------------------------------------------------------------*/
 enum
 {
-  CMD_I2C_INIT,
-  CMD_I2C_START,
-  CMD_I2C_STOP,
-  CMD_I2C_READ,
-  CMD_I2C_WRITE,
+  CMD_I2C_INIT     = 0x00,
+  CMD_I2C_START    = 0x01,
+  CMD_I2C_STOP     = 0x02,
+  CMD_I2C_READ     = 0x03,
+  CMD_I2C_WRITE    = 0x04,
 };
 
 enum
@@ -52,11 +52,22 @@ enum
   I2C_TRANSFER_READ  = 1,
 };
 
-/*- Types -------------------------------------------------------------------*/
-
-/*- Variables ---------------------------------------------------------------*/
-
 /*- Implementations ---------------------------------------------------------*/
+
+//-----------------------------------------------------------------------------
+int i2c_init(int freq)
+{
+  uint8_t buf[10];
+
+  buf[0] = CMD_I2C_INIT;
+  buf[1] = (freq >> 0) & 0xff;
+  buf[2] = (freq >> 8) & 0xff;
+  buf[3] = (freq >> 16) & 0xff;
+  buf[4] = (freq >> 24) & 0xff;
+  dgw_cmd(buf, sizeof(buf), 5);
+
+  return ((uint32_t)buf[4] << 24) | ((uint32_t)buf[3] << 16) | ((uint32_t)buf[2] << 8) | buf[1];
+}
 
 //-----------------------------------------------------------------------------
 bool i2c_write(int addr, uint8_t *data, int size)
@@ -288,3 +299,4 @@ void i2c_read_buffer(int addr, int int_addr, uint8_t *data, int size)
 
   i2c_read(addr, data, size);
 }
+

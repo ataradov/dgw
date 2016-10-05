@@ -35,7 +35,7 @@
 #include <stdbool.h>
 
 /*- Prototypes --------------------------------------------------------------*/
-void i2c_init(void);
+int i2c_init(int freq);
 bool i2c_start(int addr);
 bool i2c_stop(void);
 bool i2c_read_byte(uint8_t *byte, bool last);

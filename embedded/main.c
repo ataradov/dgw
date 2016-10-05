@@ -36,8 +36,9 @@
 #include "nvm_data.h"
 #include "debug.h"
 #include "usb.h"
-#include "i2c_master.h"
 #include "gpio.h"
+#include "i2c_master.h"
+#include "spi_master.h"
 
 /*- Definitions -------------------------------------------------------------*/
 HAL_GPIO_PIN(LED,      B, 30)
@@ -53,15 +54,18 @@ enum
   CMD_I2C_READ     = 0x03,
   CMD_I2C_WRITE    = 0x04,
 
-  CMD_GPIO_CONFIG  = 0x10,
-  CMD_GPIO_READ    = 0x11,
-  CMD_GPIO_WRITE   = 0x12,
+  CMD_SPI_INIT     = 0x10,
+  CMD_SPI_SS       = 0x11,
+  CMD_SPI_TRANSFER = 0x12,
+
+  CMD_GPIO_CONFIG  = 0x50,
+  CMD_GPIO_READ    = 0x51,
+  CMD_GPIO_WRITE   = 0x52,
 };
 
 /*- Variables ---------------------------------------------------------------*/
-ALIGNED(4) uint8_t app_usb_recv_buffer[64];
-ALIGNED(4) uint8_t app_usb_send_buffer[64]; // TODO: use buffers from components
-ALIGNED(4) uint8_t app_response_buffer[64];
+static ALIGNED(4) uint8_t app_usb_recv_buffer[64];
+static ALIGNED(4) uint8_t app_response_buffer[64];
 
 /*- Implementations ---------------------------------------------------------*/
 
@@ -129,7 +133,7 @@ static void sys_init(void)
 
   asm volatile ("cpsie i");
 }
-/*
+
 //-----------------------------------------------------------------------------
 static uint32_t get_uint32(uint8_t *data)
 {
@@ -145,7 +149,7 @@ static void set_uint32(uint8_t *data, uint32_t value)
   data[2] = (value >> 16) & 0xff;
   data[3] = (value >> 24) & 0xff;
 }
-*/
+
 //-----------------------------------------------------------------------------
 void usb_send_callback(void)
 {
@@ -154,22 +158,27 @@ void usb_send_callback(void)
 //-----------------------------------------------------------------------------
 void usb_recv_callback(void)
 {
-  app_response_buffer[0] = app_usb_recv_buffer[0];
+  int cmd = app_usb_recv_buffer[0];
+
+  app_response_buffer[0] = cmd;
   app_response_buffer[1] = true;
 
-  if (CMD_I2C_INIT == app_usb_recv_buffer[0])
+  if (CMD_I2C_INIT == cmd)
   {
+    int freq = get_uint32(&app_usb_recv_buffer[1]);
+    freq = i2c_init(freq);
+    set_uint32(&app_response_buffer[2], freq);
   }
-  else if (CMD_I2C_START == app_usb_recv_buffer[0])
+  else if (CMD_I2C_START == cmd)
   {
     int addr = app_usb_recv_buffer[1];
     app_response_buffer[1] = i2c_start(addr);
   }
-  else if (CMD_I2C_STOP == app_usb_recv_buffer[0])
+  else if (CMD_I2C_STOP == cmd)
   {
     app_response_buffer[1] = i2c_stop();
   }
-  else if (CMD_I2C_READ == app_usb_recv_buffer[0])
+  else if (CMD_I2C_READ == cmd)
   {
     int i;
 
@@ -186,7 +195,7 @@ void usb_recv_callback(void)
 
     app_response_buffer[2] = i;
   }
-  else if (CMD_I2C_WRITE == app_usb_recv_buffer[0])
+  else if (CMD_I2C_WRITE == cmd)
   {
     int i;
 
@@ -201,7 +210,26 @@ void usb_recv_callback(void)
 
     app_response_buffer[2] = i;
   }
-  else if (CMD_GPIO_CONFIG == app_usb_recv_buffer[0])
+
+  else if (CMD_SPI_INIT == cmd)
+  {
+    int freq = get_uint32(&app_usb_recv_buffer[1]);
+    freq = spi_init(freq);
+    set_uint32(&app_response_buffer[2], freq);
+  }
+  else if (CMD_SPI_SS == cmd)
+  {
+    spi_ss(app_usb_recv_buffer[1]);
+  }
+  else if (CMD_SPI_TRANSFER == cmd)
+  {
+    for (int i = 0; i < app_usb_recv_buffer[1]; i++)
+    {
+      app_response_buffer[2 + i] = spi_write_byte(app_usb_recv_buffer[2 + i]);
+    }
+  }
+
+  else if (CMD_GPIO_CONFIG == cmd)
   {
     int cnt = app_usb_recv_buffer[1];
 
@@ -213,7 +241,7 @@ void usb_recv_callback(void)
       gpio_configure(index, conf);
     }
   }
-  else if (CMD_GPIO_READ == app_usb_recv_buffer[0])
+  else if (CMD_GPIO_READ == cmd)
   {
     int cnt = app_usb_recv_buffer[1];
 
@@ -224,7 +252,7 @@ void usb_recv_callback(void)
       app_response_buffer[2 + i] = gpio_read(index);
     }
   }
-  else if (CMD_GPIO_WRITE == app_usb_recv_buffer[0])
+  else if (CMD_GPIO_WRITE == cmd)
   {
     int cnt = app_usb_recv_buffer[1];
 
@@ -260,7 +288,6 @@ int main(void)
   debug_puts("\r\n--- start ---\r\n");
 
   usb_init();
-  i2c_init();
   gpio_init();
 
   HAL_GPIO_LED_out();

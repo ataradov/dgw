@@ -36,6 +36,7 @@
 #include <unistd.h>
 #include "main.h"
 #include "i2c.h"
+#include "spi.h"
 #include "gpio.h"
 
 /*- Definitions -------------------------------------------------------------*/
@@ -47,6 +48,22 @@
 #define GPIO_LED      2
 
 /*- Implementations ---------------------------------------------------------*/
+
+//-----------------------------------------------------------------------------
+static void init(void)
+{
+  int freq;
+
+  printf("--- Initialization ---\n");
+
+  freq = i2c_init(400000);
+  printf("I2C frequency = %d\n", freq);
+
+  freq = spi_init(8000000);
+  printf("SPI frequency = %d\n", freq);
+
+  printf("\n");
+}
 
 //-----------------------------------------------------------------------------
 static void eeprom_test(void)
@@ -129,6 +146,7 @@ static void temp_test(void)
   temp = (int16_t)(((uint16_t)buf[0] << 8) | buf[1]) / 256.0;
 
   printf("Temperature = %0.2f C\n", temp);
+
   printf("\n");
 }
 
@@ -151,11 +169,6 @@ static void gpio_test(void)
 
   printf("GPIO 1 and 2 are %s\n", shorted ? "shorted" : "open");
 
-  // SD Card Detect
-  gpio_configure(GPIO_SD, GPIO_CONF_INPUT | GPIO_CONF_PULLUP);
-
-  printf("SD Card is %s\n", gpio_read(GPIO_SD) ? "not inserted" : "inserted");
-
   // LED
   verbose("Blinking an LED... ");
 
@@ -172,14 +185,32 @@ static void gpio_test(void)
     usleep(500*1000);
   }
 
+  printf("\n\n");
+}
+
+//-----------------------------------------------------------------------------
+static void sd_card_test(void)
+{
+  printf("--- SD Card Test ---\n");
+
+  gpio_configure(GPIO_SD, GPIO_CONF_INPUT | GPIO_CONF_PULLUP);
+
+  printf("SD Card is %s\n", gpio_read(GPIO_SD) ? "not inserted" : "inserted");
+
+
+
+
+
   printf("\n");
 }
 
 //-----------------------------------------------------------------------------
 void test(void)
 {
+  init();
   eeprom_test();
   temp_test();
   gpio_test();
+  sd_card_test();
 }
 

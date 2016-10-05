@@ -75,14 +75,8 @@ static int gpio_config[GPIO_COUNT];
 /*- Implementations ---------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
-void gpio_init(void)
-{
-  for (int i = 0; i < GPIO_COUNT; i++)
-    gpio_configure(i, GPIO_CONF_DISABLE);
-}
-
 #define GEN_CONFIG_FN(i) \
-static void config_fn_##i(int conf) \
+static void gpio_config_fn_##i(int conf) \
 { \
   if (conf & GPIO_CONF_DISABLE) \
   { \
@@ -105,6 +99,7 @@ static void config_fn_##i(int conf) \
   gpio_config[i] = conf; \
 }
 
+//-----------------------------------------------------------------------------
 GEN_CONFIG_FN(0)
 GEN_CONFIG_FN(1)
 GEN_CONFIG_FN(2)
@@ -115,48 +110,31 @@ GEN_CONFIG_FN(6)
 GEN_CONFIG_FN(7)
 
 //-----------------------------------------------------------------------------
+void gpio_init(void)
+{
+  for (int i = 0; i < GPIO_COUNT; i++)
+    gpio_configure(i, GPIO_CONF_DISABLE);
+}
+
+//-----------------------------------------------------------------------------
 void gpio_configure(int index, int conf)
 {
   if (0 == index)
-    config_fn_0(conf);
+    gpio_config_fn_0(conf);
   else if (1 == index)
-    config_fn_1(conf);
+    gpio_config_fn_1(conf);
   else if (2 == index)
-    config_fn_2(conf);
+    gpio_config_fn_2(conf);
   else if (3 == index)
-    config_fn_3(conf);
+    gpio_config_fn_3(conf);
   else if (4 == index)
-    config_fn_4(conf);
+    gpio_config_fn_4(conf);
   else if (5 == index)
-    config_fn_5(conf);
+    gpio_config_fn_5(conf);
   else if (6 == index)
-    config_fn_6(conf);
+    gpio_config_fn_6(conf);
   else if (7 == index)
-    config_fn_7(conf);
-
-/*
-  if (0 == index)
-  {
-    if (conf & GPIO_CONF_DISABLE)
-    {
-      HAL_GPIO_0_in(0);
-      HAL_GPIO_0_clr();
-      HAL_GPIO_0_pullen(0);
-    }
-    else if (conf & GPIO_CONF_INPUT)
-    {
-      HAL_GPIO_0_in(0);
-      HAL_GPIO_0_pullen(conf & (GPIO_CONF_PULLUP | GPIO_CONF_PULLDOWN));
-      HAL_GPIO_0_write(conf & GPIO_CONF_PULLUP);
-    }
-    else if (conf & GPIO_CONF_OUTPUT)
-    {
-      HAL_GPIO_0_out(0);
-      HAL_GPIO_0_pullen(0);
-      HAL_GPIO_0_write(conf & GPIO_CONF_SET);
-    }
-  }
-*/
+    gpio_config_fn_7(conf);
 }
 
 //-----------------------------------------------------------------------------
@@ -205,3 +183,4 @@ void gpio_write(int index, int value)
   else if (7 == index)
     HAL_GPIO_7_write(value);
 }
+

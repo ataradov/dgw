@@ -27,6 +27,7 @@ INCLUDES += \
 SRCS += \
   ../main.c \
   ../i2c_master.c \
+  ../spi_master.c \
   ../gpio.c \
   ../debug.c \
   ../udc.c \

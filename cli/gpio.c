@@ -40,14 +40,10 @@
 /*- Definitions -------------------------------------------------------------*/
 enum
 {
-  CMD_GPIO_CONFIG  = 0x10,
-  CMD_GPIO_READ    = 0x11,
-  CMD_GPIO_WRITE   = 0x12,
+  CMD_GPIO_CONFIG  = 0x50,
+  CMD_GPIO_READ    = 0x51,
+  CMD_GPIO_WRITE   = 0x52,
 };
-
-/*- Types -------------------------------------------------------------------*/
-
-/*- Variables ---------------------------------------------------------------*/
 
 /*- Implementations ---------------------------------------------------------*/
 
@@ -90,3 +86,4 @@ void gpio_write(int index, int value)
 
   dgw_cmd(buf, sizeof(buf), 4);
 }
+
