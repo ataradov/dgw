@@ -51,6 +51,12 @@ enum
   I2C_TRANSFER_READ  = 1,
 };
 
+enum
+{
+  I2C_PINS_SDA = (1 << 0),
+  I2C_PINS_SCL = (1 << 1),
+};
+
 /*- Implementations ---------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
@@ -64,14 +70,6 @@ int i2c_init(int freq)
     baud = 255;
 
   freq = (float)F_CPU / (2.0 * (5.0 + baud) + (float)F_CPU * T_RISE);
-
-  HAL_GPIO_SDA_out();
-  HAL_GPIO_SDA_pullen(1);
-  HAL_GPIO_SDA_pmuxen(I2C_SERCOM_PMUX);
-
-  HAL_GPIO_SCL_out();
-  HAL_GPIO_SDA_pullen(1);
-  HAL_GPIO_SCL_pmuxen(I2C_SERCOM_PMUX);
 
   PM->APBCMASK.reg |= I2C_SERCOM_APBCMASK;
 
@@ -93,7 +91,14 @@ int i2c_init(int freq)
   while (I2C_SERCOM->I2CM.SYNCBUSY.reg);
 
   I2C_SERCOM->I2CM.STATUS.reg |= SERCOM_I2CM_STATUS_BUSSTATE(1);
-  while (I2C_SERCOM->I2CM.SYNCBUSY.reg);
+
+  HAL_GPIO_SDA_in();
+  HAL_GPIO_SDA_clr();
+  HAL_GPIO_SDA_pmuxen(I2C_SERCOM_PMUX);
+
+  HAL_GPIO_SCL_in();
+  HAL_GPIO_SCL_clr();
+  HAL_GPIO_SCL_pmuxen(I2C_SERCOM_PMUX);
 
   return freq;
 }
@@ -172,5 +177,34 @@ bool i2c_busy(int addr)
   I2C_SERCOM->I2CM.CTRLB.reg |= SERCOM_I2CM_CTRLB_CMD(3);
 
   return busy;
+}
+
+//-----------------------------------------------------------------------------
+void i2c_pins(int mask, int value)
+{
+  if (mask & I2C_PINS_SDA)
+  {
+    HAL_GPIO_SDA_out();
+    HAL_GPIO_SDA_write(value & I2C_PINS_SDA);
+  }
+  else
+  {
+    HAL_GPIO_SDA_in();
+    HAL_GPIO_SDA_clr();
+  }
+
+  if (mask & I2C_PINS_SCL)
+  {
+    HAL_GPIO_SCL_out();
+    HAL_GPIO_SCL_write(value & I2C_PINS_SCL);
+  }
+  else
+  {
+    HAL_GPIO_SCL_in();
+    HAL_GPIO_SCL_clr();
+  }
+
+  HAL_GPIO_SDA_pmuxdis();
+  HAL_GPIO_SCL_pmuxdis();
 }
 

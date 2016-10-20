@@ -41,6 +41,7 @@ bool i2c_stop(void);
 bool i2c_read_byte(uint8_t *byte, bool last);
 bool i2c_write_byte(uint8_t byte);
 bool i2c_busy(int addr);
+void i2c_pins(int mask, int value);
 
 #endif // _I2C_MASTER_H_
 

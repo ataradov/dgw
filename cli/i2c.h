@@ -33,6 +33,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+/*- Definitions -------------------------------------------------------------*/
+enum
+{
+  I2C_PINS_SDA = (1 << 0),
+  I2C_PINS_SCL = (1 << 1),
+};
+
 /*- Prototypes --------------------------------------------------------------*/
 int i2c_init(int freq);
 bool i2c_write(int addr, uint8_t *data, int size);
@@ -42,6 +49,7 @@ void i2c_write_reg(int addr, int int_addr, uint32_t value, int size);
 uint32_t i2c_read_reg(int addr, int int_addr, int size);
 void i2c_write_buffer(int addr, int int_addr, uint8_t *data, int size);
 void i2c_read_buffer(int addr, int int_addr, uint8_t *data, int size);
+void i2c_pins(int mask, int value);
 
 #endif // _I2C_H_
 

@@ -53,6 +53,7 @@ enum
   CMD_I2C_STOP     = 0x02,
   CMD_I2C_READ     = 0x03,
   CMD_I2C_WRITE    = 0x04,
+  CMD_I2C_PINS     = 0x05,
 
   CMD_SPI_INIT     = 0x10,
   CMD_SPI_SS       = 0x11,
@@ -130,8 +131,6 @@ static void sys_init(void)
   GCLK->GENCTRL.reg = GCLK_GENCTRL_ID(0) | GCLK_GENCTRL_SRC(GCLK_SOURCE_DFLL48M) |
       GCLK_GENCTRL_RUNSTDBY | GCLK_GENCTRL_GENEN;
   while (GCLK->STATUS.reg & GCLK_STATUS_SYNCBUSY);
-
-  asm volatile ("cpsie i");
 }
 
 //-----------------------------------------------------------------------------
@@ -209,6 +208,10 @@ void usb_recv_callback(void)
     }
 
     app_response_buffer[2] = i;
+  }
+  else if (CMD_I2C_PINS == cmd)
+  {
+    i2c_pins(app_usb_recv_buffer[1], app_usb_recv_buffer[2]);
   }
 
   else if (CMD_SPI_INIT == cmd)

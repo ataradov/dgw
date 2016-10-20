@@ -44,6 +44,7 @@ enum
   CMD_I2C_STOP     = 0x02,
   CMD_I2C_READ     = 0x03,
   CMD_I2C_WRITE    = 0x04,
+  CMD_I2C_PINS     = 0x05,
 };
 
 enum
@@ -298,5 +299,16 @@ void i2c_read_buffer(int addr, int int_addr, uint8_t *data, int size)
   i2c_write(addr, buf, 2);
 
   i2c_read(addr, data, size);
+}
+
+//-----------------------------------------------------------------------------
+void i2c_pins(int mask, int value)
+{
+  uint8_t buf[10];
+
+  buf[0] = CMD_I2C_PINS;
+  buf[1] = mask;
+  buf[2] = value;
+  dgw_cmd(buf, sizeof(buf), 3);
 }
 
