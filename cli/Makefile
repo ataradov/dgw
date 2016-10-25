@@ -5,6 +5,9 @@ SRCS = \
   test.c \
   i2c.c \
   spi.c \
+  adc.c \
+  dac.c \
+  pwm.c \
   gpio.c
 
 HDRS = \
@@ -13,6 +16,9 @@ HDRS = \
   dgw.h \
   i2c.h \
   spi.h \
+  adc.h \
+  dac.h \
+  pwm.h \
   gpio.h
 
 ifeq ($(UNAME), Linux)

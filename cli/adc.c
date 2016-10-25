@@ -26,59 +26,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _USB_DESCRIPTORS_H_
-#define _USB_DESCRIPTORS_H_
-
 /*- Includes ----------------------------------------------------------------*/
-#include "usb.h"
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+#include <unistd.h>
+#include "main.h"
+#include "dgw.h"
+#include "adc.h"
 
 /*- Definitions -------------------------------------------------------------*/
 enum
 {
-  USB_HID_DESCRIPTOR          = 0x21,
-  USB_HID_REPORT_DESCRIPTOR   = 0x22,
-  USB_HID_PHYSICAL_DESCRIPTOR = 0x23,
+  CMD_ADC_INIT     = 0x70,
+  CMD_ADC_READ     = 0x71,
 };
 
-enum
-{
-  USB_STR_ZERO,
-  USB_STR_MANUFACTURER,
-  USB_STR_PRODUCT,
-  USB_STR_SERIAL_NUMBER,
-  USB_STR_CONFIGURATION,
-  USB_STR_INTERFACE,
-  USB_STR_COUNT,
-};
-
-/*- Types -------------------------------------------------------------------*/
-typedef struct PACK
-{
-  uint8_t   bLength;
-  uint8_t   bDescriptorType;
-  uint16_t  bcdHID;
-  uint8_t   bCountryCode;
-  uint8_t   bNumDescriptors;
-  uint8_t   bDescriptorType1;
-  uint16_t  wDescriptorLength;
-} usb_hid_descriptor_t;
-
-typedef struct PACK
-{
-  usb_configuration_descriptor_t  configuration;
-  usb_interface_descriptor_t      interface;
-  usb_hid_descriptor_t            hid;
-  usb_endpoint_descriptor_t       ep_in;
-  usb_endpoint_descriptor_t       ep_out;
-} usb_configuration_hierarchy_t;
+/*- Implementations ---------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
-extern usb_device_descriptor_t usb_device_descriptor;
-extern usb_configuration_hierarchy_t usb_configuration_hierarchy;
-extern uint8_t usb_hid_report_descriptor[33];
-extern usb_string_descriptor_zero_t usb_string_descriptor_zero;
-extern char *usb_strings[];
-extern uint8_t usb_string_descriptor_buffer[64];
+void adc_init(void)
+{
+  uint8_t buf[10];
 
-#endif // _USB_DESCRIPTORS_H_
+  buf[0] = CMD_ADC_INIT;
+  dgw_cmd(buf, sizeof(buf), 1);
+}
+
+//-----------------------------------------------------------------------------
+int adc_read(void)
+{
+  uint8_t buf[10];
+
+  buf[0] = CMD_ADC_READ;
+  dgw_cmd(buf, sizeof(buf), 1);
+
+  return ((int)buf[2] << 8) | buf[1];
+}
 

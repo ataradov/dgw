@@ -26,59 +26,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _USB_DESCRIPTORS_H_
-#define _USB_DESCRIPTORS_H_
-
-/*- Includes ----------------------------------------------------------------*/
-#include "usb.h"
-
-/*- Definitions -------------------------------------------------------------*/
-enum
-{
-  USB_HID_DESCRIPTOR          = 0x21,
-  USB_HID_REPORT_DESCRIPTOR   = 0x22,
-  USB_HID_PHYSICAL_DESCRIPTOR = 0x23,
-};
-
-enum
-{
-  USB_STR_ZERO,
-  USB_STR_MANUFACTURER,
-  USB_STR_PRODUCT,
-  USB_STR_SERIAL_NUMBER,
-  USB_STR_CONFIGURATION,
-  USB_STR_INTERFACE,
-  USB_STR_COUNT,
-};
+#ifndef _PWM_H_
+#define _PWM_H_
 
 /*- Types -------------------------------------------------------------------*/
-typedef struct PACK
+enum
 {
-  uint8_t   bLength;
-  uint8_t   bDescriptorType;
-  uint16_t  bcdHID;
-  uint8_t   bCountryCode;
-  uint8_t   bNumDescriptors;
-  uint8_t   bDescriptorType1;
-  uint16_t  wDescriptorLength;
-} usb_hid_descriptor_t;
+  PWM_PRESCALER_1    = 0,
+  PWM_PRESCALER_2    = 1,
+  PWM_PRESCALER_4    = 2,
+  PWM_PRESCALER_8    = 3,
+  PWM_PRESCALER_16   = 4,
+  PWM_PRESCALER_64   = 5,
+  PWM_PRESCALER_256  = 6,
+  PWM_PRESCALER_1024 = 7,
+};
 
-typedef struct PACK
-{
-  usb_configuration_descriptor_t  configuration;
-  usb_interface_descriptor_t      interface;
-  usb_hid_descriptor_t            hid;
-  usb_endpoint_descriptor_t       ep_in;
-  usb_endpoint_descriptor_t       ep_out;
-} usb_configuration_hierarchy_t;
+/*- Prototypes --------------------------------------------------------------*/
+void pwm_init(int prescaler, int period);
+void pwm_write(int channel, int value);
 
-//-----------------------------------------------------------------------------
-extern usb_device_descriptor_t usb_device_descriptor;
-extern usb_configuration_hierarchy_t usb_configuration_hierarchy;
-extern uint8_t usb_hid_report_descriptor[33];
-extern usb_string_descriptor_zero_t usb_string_descriptor_zero;
-extern char *usb_strings[];
-extern uint8_t usb_string_descriptor_buffer[64];
-
-#endif // _USB_DESCRIPTORS_H_
+#endif // _PWM_H_
 

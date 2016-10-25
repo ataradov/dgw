@@ -26,59 +26,58 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _USB_DESCRIPTORS_H_
-#define _USB_DESCRIPTORS_H_
-
 /*- Includes ----------------------------------------------------------------*/
-#include "usb.h"
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include "samd21.h"
+#include "hal_gpio.h"
+#include "nvm_data.h"
+#include "dac.h"
 
 /*- Definitions -------------------------------------------------------------*/
-enum
-{
-  USB_HID_DESCRIPTOR          = 0x21,
-  USB_HID_REPORT_DESCRIPTOR   = 0x22,
-  USB_HID_PHYSICAL_DESCRIPTOR = 0x23,
-};
+HAL_GPIO_PIN(ADC,      A, 3)
 
-enum
-{
-  USB_STR_ZERO,
-  USB_STR_MANUFACTURER,
-  USB_STR_PRODUCT,
-  USB_STR_SERIAL_NUMBER,
-  USB_STR_CONFIGURATION,
-  USB_STR_INTERFACE,
-  USB_STR_COUNT,
-};
-
-/*- Types -------------------------------------------------------------------*/
-typedef struct PACK
-{
-  uint8_t   bLength;
-  uint8_t   bDescriptorType;
-  uint16_t  bcdHID;
-  uint8_t   bCountryCode;
-  uint8_t   bNumDescriptors;
-  uint8_t   bDescriptorType1;
-  uint16_t  wDescriptorLength;
-} usb_hid_descriptor_t;
-
-typedef struct PACK
-{
-  usb_configuration_descriptor_t  configuration;
-  usb_interface_descriptor_t      interface;
-  usb_hid_descriptor_t            hid;
-  usb_endpoint_descriptor_t       ep_in;
-  usb_endpoint_descriptor_t       ep_out;
-} usb_configuration_hierarchy_t;
+/*- Implementations ---------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
-extern usb_device_descriptor_t usb_device_descriptor;
-extern usb_configuration_hierarchy_t usb_configuration_hierarchy;
-extern uint8_t usb_hid_report_descriptor[33];
-extern usb_string_descriptor_zero_t usb_string_descriptor_zero;
-extern char *usb_strings[];
-extern uint8_t usb_string_descriptor_buffer[64];
+void adc_init(void)
+{
+  HAL_GPIO_ADC_in();
+  HAL_GPIO_ADC_pmuxen(HAL_GPIO_PMUX_B);
 
-#endif // _USB_DESCRIPTORS_H_
+  PM->APBCMASK.reg |= PM_APBCMASK_ADC;
+
+  GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(ADC_GCLK_ID) |
+      GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN(0);
+
+  ADC->CTRLA.reg = ADC_CTRLA_SWRST;
+  while (ADC->CTRLA.reg & ADC_CTRLA_SWRST);
+
+  ADC->REFCTRL.reg = ADC_REFCTRL_REFSEL_INTVCC1 | ADC_REFCTRL_REFCOMP;
+  ADC->CTRLB.reg = ADC_CTRLB_RESSEL_16BIT | ADC_CTRLB_PRESCALER_DIV32;
+  ADC->AVGCTRL.reg = ADC_AVGCTRL_SAMPLENUM_128;
+  ADC->INPUTCTRL.reg = ADC_INPUTCTRL_MUXPOS_PIN1 | ADC_INPUTCTRL_MUXNEG_GND |
+      ADC_INPUTCTRL_GAIN_DIV2;
+  ADC->CALIB.reg = ADC_CALIB_BIAS_CAL(NVM_READ_CAL(ADC_BIASCAL)) |
+      ADC_CALIB_LINEARITY_CAL(NVM_READ_CAL(ADC_LINEARITY));
+
+  ADC->CTRLA.reg = ADC_CTRLA_ENABLE;
+}
+
+HAL_GPIO_PIN(X, B, 17)
+
+//-----------------------------------------------------------------------------
+int adc_read(void)
+{
+  HAL_GPIO_X_out();
+  HAL_GPIO_X_set();
+
+  ADC->SWTRIG.reg = ADC_SWTRIG_START;
+  while (0 == (ADC->INTFLAG.reg & ADC_INTFLAG_RESRDY));
+
+  HAL_GPIO_X_clr();
+
+  return ADC->RESULT.reg;
+}
 

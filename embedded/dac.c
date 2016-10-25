@@ -26,59 +26,40 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _USB_DESCRIPTORS_H_
-#define _USB_DESCRIPTORS_H_
-
 /*- Includes ----------------------------------------------------------------*/
-#include "usb.h"
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include "samd21.h"
+#include "hal_gpio.h"
+#include "dac.h"
 
 /*- Definitions -------------------------------------------------------------*/
-enum
-{
-  USB_HID_DESCRIPTOR          = 0x21,
-  USB_HID_REPORT_DESCRIPTOR   = 0x22,
-  USB_HID_PHYSICAL_DESCRIPTOR = 0x23,
-};
+HAL_GPIO_PIN(DAC,      A, 2)
 
-enum
-{
-  USB_STR_ZERO,
-  USB_STR_MANUFACTURER,
-  USB_STR_PRODUCT,
-  USB_STR_SERIAL_NUMBER,
-  USB_STR_CONFIGURATION,
-  USB_STR_INTERFACE,
-  USB_STR_COUNT,
-};
-
-/*- Types -------------------------------------------------------------------*/
-typedef struct PACK
-{
-  uint8_t   bLength;
-  uint8_t   bDescriptorType;
-  uint16_t  bcdHID;
-  uint8_t   bCountryCode;
-  uint8_t   bNumDescriptors;
-  uint8_t   bDescriptorType1;
-  uint16_t  wDescriptorLength;
-} usb_hid_descriptor_t;
-
-typedef struct PACK
-{
-  usb_configuration_descriptor_t  configuration;
-  usb_interface_descriptor_t      interface;
-  usb_hid_descriptor_t            hid;
-  usb_endpoint_descriptor_t       ep_in;
-  usb_endpoint_descriptor_t       ep_out;
-} usb_configuration_hierarchy_t;
+/*- Implementations ---------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
-extern usb_device_descriptor_t usb_device_descriptor;
-extern usb_configuration_hierarchy_t usb_configuration_hierarchy;
-extern uint8_t usb_hid_report_descriptor[33];
-extern usb_string_descriptor_zero_t usb_string_descriptor_zero;
-extern char *usb_strings[];
-extern uint8_t usb_string_descriptor_buffer[64];
+void dac_init(void)
+{
+  HAL_GPIO_DAC_out();
+  HAL_GPIO_DAC_pmuxen(HAL_GPIO_PMUX_B);
 
-#endif // _USB_DESCRIPTORS_H_
+  PM->APBCMASK.reg |= PM_APBCMASK_DAC;
+
+  GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(DAC_GCLK_ID) |
+    GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN(0);
+
+  DAC->CTRLA.reg = DAC_CTRLA_SWRST;
+  while (DAC->CTRLA.reg & DAC_CTRLA_SWRST);
+
+  DAC->CTRLB.reg = DAC_CTRLB_EOEN | DAC_CTRLB_REFSEL_AVCC;
+  DAC->CTRLA.reg = DAC_CTRLA_ENABLE;
+}
+
+//-----------------------------------------------------------------------------
+void dac_write(int value)
+{
+  DAC->DATA.reg = value;
+}
 

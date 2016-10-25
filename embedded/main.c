@@ -30,12 +30,16 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdalign.h>
 #include <string.h>
 #include "samd21.h"
 #include "hal_gpio.h"
 #include "nvm_data.h"
 #include "debug.h"
 #include "usb.h"
+#include "dac.h"
+#include "adc.h"
+#include "pwm.h"
 #include "gpio.h"
 #include "i2c_master.h"
 #include "spi_master.h"
@@ -62,11 +66,20 @@ enum
   CMD_GPIO_CONFIG  = 0x50,
   CMD_GPIO_READ    = 0x51,
   CMD_GPIO_WRITE   = 0x52,
+
+  CMD_DAC_INIT     = 0x60,
+  CMD_DAC_WRITE    = 0x61,
+
+  CMD_ADC_INIT     = 0x70,
+  CMD_ADC_READ     = 0x71,
+
+  CMD_PWM_INIT     = 0x80,
+  CMD_PWM_WRITE    = 0x81,
 };
 
 /*- Variables ---------------------------------------------------------------*/
-static ALIGNED(4) uint8_t app_usb_recv_buffer[64];
-static ALIGNED(4) uint8_t app_response_buffer[64];
+static alignas(4) uint8_t app_usb_recv_buffer[64];
+static alignas(4) uint8_t app_response_buffer[64];
 
 /*- Implementations ---------------------------------------------------------*/
 
@@ -114,8 +127,8 @@ static void sys_init(void)
 
   NVMCTRL->CTRLB.bit.RWS = 2;
 
-  coarse = NVM_READ_CAL(NVM_DFLL48M_COARSE_CAL);
-  fine = NVM_READ_CAL(NVM_DFLL48M_FINE_CAL);
+  coarse = NVM_READ_CAL(DFLL48M_COARSE_CAL);
+  fine = NVM_READ_CAL(DFLL48M_FINE_CAL);
 
   SYSCTRL->DFLLCTRL.reg = 0; // See Errata 9905
   while (0 == (SYSCTRL->PCLKSR.reg & SYSCTRL_PCLKSR_DFLLRDY));
@@ -141,12 +154,25 @@ static uint32_t get_uint32(uint8_t *data)
 }
 
 //-----------------------------------------------------------------------------
+static uint32_t get_uint16(uint8_t *data)
+{
+  return ((uint16_t)data[0] << 0) | ((uint16_t)data[1] << 8);
+}
+
+//-----------------------------------------------------------------------------
 static void set_uint32(uint8_t *data, uint32_t value)
 {
   data[0] = (value >> 0) & 0xff;
   data[1] = (value >> 8) & 0xff;
   data[2] = (value >> 16) & 0xff;
   data[3] = (value >> 24) & 0xff;
+}
+
+//-----------------------------------------------------------------------------
+static void set_uint16(uint8_t *data, uint16_t value)
+{
+  data[0] = (value >> 0) & 0xff;
+  data[1] = (value >> 8) & 0xff;
 }
 
 //-----------------------------------------------------------------------------
@@ -266,6 +292,38 @@ void usb_recv_callback(void)
 
       gpio_write(index, value);
     }
+  }
+
+  else if (CMD_DAC_INIT == cmd)
+  {
+    dac_init();
+  }
+  else if (CMD_DAC_WRITE == cmd)
+  {
+    int value = get_uint16(&app_usb_recv_buffer[1]);
+    dac_write(value);
+  }
+
+  else if (CMD_ADC_INIT == cmd)
+  {
+    adc_init();
+  }
+  else if (CMD_ADC_READ == cmd)
+  {
+    set_uint16(&app_response_buffer[2], adc_read());
+  }
+
+  else if (CMD_PWM_INIT == cmd)
+  {
+    int prescaler = app_usb_recv_buffer[1];
+    int period = get_uint32(&app_usb_recv_buffer[2]);
+    pwm_init(prescaler, period);
+  }
+  else if (CMD_PWM_WRITE == cmd)
+  {
+    int channel = app_usb_recv_buffer[1];
+    int value = get_uint32(&app_usb_recv_buffer[2]);
+    pwm_write(channel, value);
   }
 
   usb_send(APP_EP_SEND, app_response_buffer, sizeof(app_response_buffer), usb_send_callback);

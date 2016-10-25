@@ -9,7 +9,7 @@ CC = arm-none-eabi-gcc
 OBJCOPY = arm-none-eabi-objcopy
 SIZE = arm-none-eabi-size
 
-CFLAGS += -W -Wall --std=gnu99 -Os
+CFLAGS += -W -Wall --std=gnu11 -Os
 CFLAGS += -fno-diagnostics-show-caret
 CFLAGS += -fdata-sections -ffunction-sections
 CFLAGS += -funsigned-char -funsigned-bitfields
@@ -29,6 +29,9 @@ SRCS += \
   ../i2c_master.c \
   ../spi_master.c \
   ../gpio.c \
+  ../dac.c \
+  ../adc.c \
+  ../pwm.c \
   ../debug.c \
   ../udc.c \
   ../usb.c \

@@ -55,7 +55,7 @@
 #define NVM_DFLL48M_FINE_CAL_SIZE    10
 
 #define NVM_READ_CAL(cal) \
-    ((*((uint32_t *)NVMCTRL_OTP4 + cal##_POS / 32)) >> (cal##_POS % 32)) & ((1 << cal##_SIZE) - 1)
+    ((*((uint32_t *)NVMCTRL_OTP4 + NVM_##cal##_POS / 32)) >> (NVM_##cal##_POS % 32)) & ((1 << NVM_##cal##_SIZE) - 1)
 
 #endif // _NVM_DATA_H_
 

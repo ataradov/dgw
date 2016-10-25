@@ -26,13 +26,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _UTILS_H_
-#define _UTILS_H_
+/*- Includes ----------------------------------------------------------------*/
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include "samd21.h"
+#include "hal_gpio.h"
+#include "pwm.h"
 
 /*- Definitions -------------------------------------------------------------*/
-#define PACK            __attribute__((packed))
-#define INLINE          static inline __attribute__((always_inline))
-#define LIMIT(a, b)     (((a) > (b)) ? (b) : (a))
+HAL_GPIO_PIN(PWM_0,   A, 10)
+HAL_GPIO_PIN(PWM_1,   A, 11)
 
-#endif // _UTILS_H_
+/*- Implementations ---------------------------------------------------------*/
+
+//-----------------------------------------------------------------------------
+void pwm_init(int prescaler, int period)
+{
+  HAL_GPIO_PWM_0_out();
+  HAL_GPIO_PWM_0_pmuxen(HAL_GPIO_PMUX_F);
+
+  HAL_GPIO_PWM_1_out();
+  HAL_GPIO_PWM_1_pmuxen(HAL_GPIO_PMUX_F);
+
+  PM->APBCMASK.reg |= PM_APBCMASK_TCC0;
+
+  GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(TCC0_GCLK_ID) |
+      GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN(0);
+
+  TCC0->CTRLA.reg = TCC_CTRLA_SWRST;
+  while (TCC0->CTRLA.reg & TCC_CTRLA_SWRST);
+
+  TCC0->CTRLA.reg = TCC_CTRLA_PRESCALER(prescaler) | TCC_CTRLA_PRESCSYNC_PRESC;
+  TCC0->WAVE.reg = TCC_WAVE_WAVEGEN_NPWM;
+  TCC0->PER.reg = period;
+  TCC0->COUNT.reg = 0;
+  TCC0->CC[2].reg = 0;
+  TCC0->CC[3].reg = 0;
+  TCC0->CTRLA.reg |= TCC_CTRLA_ENABLE;
+}
+
+//-----------------------------------------------------------------------------
+void pwm_write(int channel, int value)
+{
+  TCC0->CTRLA.reg &= ~TCC_CTRLA_ENABLE;
+  TCC0->COUNT.reg = 0;
+  TCC0->CC[channel + 2].reg = value;
+  TCC0->CTRLA.reg |= TCC_CTRLA_ENABLE;
+}
 

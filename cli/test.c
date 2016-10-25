@@ -35,6 +35,9 @@
 #include <string.h>
 #include <unistd.h>
 #include "main.h"
+#include "adc.h"
+#include "dac.h"
+#include "pwm.h"
 #include "i2c.h"
 #include "spi.h"
 #include "gpio.h"
@@ -50,27 +53,13 @@
 /*- Implementations ---------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
-static void init(void)
-{
-  int freq;
-
-  printf("--- Initialization ---\n");
-
-  freq = i2c_init(400000);
-  printf("I2C frequency = %d\n", freq);
-
-  freq = spi_init(8000000);
-  printf("SPI frequency = %d\n", freq);
-
-  printf("\n");
-}
-
-//-----------------------------------------------------------------------------
 static void eeprom_test(void)
 {
   uint8_t buf[1024];
 
   printf("--- EEPROM Test ---\n");
+
+  i2c_init(400000);
 
   srand(time(NULL));
 
@@ -130,6 +119,8 @@ static void temp_test(void)
   float temp;
 
   printf("--- Temperature Test ---\n");
+
+  i2c_init(400000);
 
   // Enable 12-bit mode
   buf[0] = 0x01;
@@ -270,6 +261,8 @@ static void sd_card_test(void)
 
   printf("--- SD Card Test ---\n");
 
+  spi_init(8000000);
+
   gpio_configure(GPIO_SD, GPIO_CONF_INPUT | GPIO_CONF_PULLUP);
 
   inserted = !gpio_read(GPIO_SD);
@@ -320,12 +313,40 @@ static void sd_card_test(void)
 }
 
 //-----------------------------------------------------------------------------
+static void adc_dac_test(void)
+{
+  adc_init();
+  dac_init();
+
+  for (int dac_value = 0; dac_value < 1024; dac_value += 93)
+  {
+    int adc_value;
+
+    dac_write(dac_value);
+    adc_value = adc_read() >> 6;
+
+    printf("DAC = %4d, ADC = %4d (error = %d)\n", dac_value, adc_value,
+        dac_value - adc_value);
+  }
+}
+
+//-----------------------------------------------------------------------------
+static void pwm_test(void)
+{
+  pwm_init(PWM_PRESCALER_1, 10000);
+
+  pwm_write(0, 5000);
+  pwm_write(1, 1000);
+}
+
+//-----------------------------------------------------------------------------
 void test(void)
 {
-  init();
-  eeprom_test();
-  temp_test();
-  gpio_test();
-  sd_card_test();
+//  eeprom_test();
+//  temp_test();
+//  gpio_test();
+//  sd_card_test();
+//  adc_dac_test();
+  pwm_test();
 }
 
