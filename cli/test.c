@@ -233,7 +233,7 @@ static uint8_t sdc_command(uint8_t index, uint32_t arg)
 static void sdc_prepare(void)
 {
   spi_ss(1);
-  spi_init(100000);
+  spi_init(100000, 0);
 
   for (int i = 0; i < 10; i++)
     spi_write_byte(0xff);
@@ -261,7 +261,7 @@ static void sd_card_test(void)
 
   printf("--- SD Card Test ---\n");
 
-  spi_init(8000000);
+  spi_init(8000000, 0);
 
   gpio_configure(GPIO_SD, GPIO_CONF_INPUT | GPIO_CONF_PULLUP);
 
@@ -342,11 +342,11 @@ static void pwm_test(void)
 //-----------------------------------------------------------------------------
 void test(void)
 {
-//  eeprom_test();
-//  temp_test();
-//  gpio_test();
-//  sd_card_test();
-//  adc_dac_test();
+  eeprom_test();
+  temp_test();
+  gpio_test();
+  sd_card_test();
+  adc_dac_test();
   pwm_test();
 }
 

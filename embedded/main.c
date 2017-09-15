@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Alex Taradov <alex@taradov.com>
+ * Copyright (c) 2016-2017, Alex Taradov <alex@taradov.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,9 @@ HAL_GPIO_PIN(LED,      B, 30)
 #define APP_EP_SEND    1
 #define APP_EP_RECV    2
 
+#define APP_MAGIC      0x78656c41
+#define APP_VERSION    1
+
 enum
 {
   CMD_I2C_INIT     = 0x00,
@@ -75,6 +78,8 @@ enum
 
   CMD_PWM_INIT     = 0x80,
   CMD_PWM_WRITE    = 0x81,
+
+  CMD_GET_VERSION  = 0xf0,
 };
 
 /*- Variables ---------------------------------------------------------------*/
@@ -243,7 +248,8 @@ void usb_recv_callback(void)
   else if (CMD_SPI_INIT == cmd)
   {
     int freq = get_uint32(&app_usb_recv_buffer[1]);
-    freq = spi_init(freq);
+    int mode = app_usb_recv_buffer[5];
+    freq = spi_init(freq, mode);
     set_uint32(&app_response_buffer[2], freq);
   }
   else if (CMD_SPI_SS == cmd)
@@ -324,6 +330,17 @@ void usb_recv_callback(void)
     int channel = app_usb_recv_buffer[1];
     int value = get_uint32(&app_usb_recv_buffer[2]);
     pwm_write(channel, value);
+  }
+
+  else if (CMD_GET_VERSION == cmd)
+  {
+    set_uint32(&app_response_buffer[2], APP_MAGIC);
+    app_response_buffer[6] = APP_VERSION;
+  }
+
+  else
+  {
+    app_response_buffer[1] = false;
   }
 
   usb_send(APP_EP_SEND, app_response_buffer, sizeof(app_response_buffer), usb_send_callback);

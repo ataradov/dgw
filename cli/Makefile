@@ -3,6 +3,7 @@ UNAME := $(shell uname)
 SRCS = \
   main.c \
   test.c \
+  version.c \
   i2c.c \
   spi.c \
   adc.c \
@@ -13,6 +14,7 @@ SRCS = \
 HDRS = \
   main.h \
   test.h \
+  version.h \
   dgw.h \
   i2c.h \
   spi.h \

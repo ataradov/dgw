@@ -37,7 +37,11 @@
 #include <errno.h>
 #include "main.h"
 #include "dgw.h"
+#include "version.h"
 #include "test.h"
+
+/*- Definitions -------------------------------------------------------------*/
+#define APP_VERSION    1
 
 /*- Variables ---------------------------------------------------------------*/
 static const struct option long_options[] =
@@ -219,6 +223,8 @@ int main(int argc, char **argv)
     error_exit("more than one gateway found, please specify a serial number");
 
   dgw_open(&dgws[dgw]);
+
+  check(APP_VERSION == get_version(), "gateway version mismatch");
 
   test();
 

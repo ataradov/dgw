@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Alex Taradov <alex@taradov.com>
+ * Copyright (c) 2017, Alex Taradov <alex@taradov.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,17 +26,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SPI_MASTER_H_
-#define _SPI_MASTER_H_
-
-/*- Includes ----------------------------------------------------------------*/
-#include <stdint.h>
-#include <stdbool.h>
+#ifndef _VERSION_H_
+#define _VERSION_H_
 
 /*- Prototypes --------------------------------------------------------------*/
-int spi_init(int freq, int mode);
-void spi_ss(int state);
-uint8_t spi_write_byte(uint8_t byte);
+int get_version(void);
 
-#endif // _SPI_MASTER_H_
+#endif // _VERSION_H_
 

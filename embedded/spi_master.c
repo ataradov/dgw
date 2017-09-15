@@ -48,7 +48,7 @@ HAL_GPIO_PIN(SS,              A, 5);
 /*- Implementations ---------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
-int spi_init(int freq)
+int spi_init(int freq, int mode)
 {
   int baud = F_CPU / (2 * freq) - 1;
 
@@ -83,6 +83,8 @@ int spi_init(int freq)
 
   SPI_SERCOM->SPI.CTRLA.reg = SERCOM_SPI_CTRLA_ENABLE |
       SERCOM_SPI_CTRLA_DIPO(0) | SERCOM_SPI_CTRLA_DOPO(1) |
+      ((mode & 1) ? SERCOM_SPI_CTRLA_CPHA : 0) |
+      ((mode & 2) ? SERCOM_SPI_CTRLA_CPOL : 0) |
       SERCOM_SPI_CTRLA_MODE_SPI_MASTER;
 
   return freq;

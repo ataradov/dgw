@@ -47,7 +47,7 @@ enum
 /*- Implementations ---------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
-int spi_init(int freq)
+int spi_init(int freq, int mode)
 {
   uint8_t buf[10];
 
@@ -56,7 +56,8 @@ int spi_init(int freq)
   buf[2] = (freq >> 8) & 0xff;
   buf[3] = (freq >> 16) & 0xff;
   buf[4] = (freq >> 24) & 0xff;
-  dgw_cmd(buf, sizeof(buf), 5);
+  buf[5] = mode;
+  dgw_cmd(buf, sizeof(buf), 6);
 
   return ((uint32_t)buf[4] << 24) | ((uint32_t)buf[3] << 16) | ((uint32_t)buf[2] << 8) | buf[1];
 }
@@ -83,10 +84,16 @@ void spi_transfer(uint8_t *wdata, uint8_t *rdata, int size)
 
     buf[0] = CMD_SPI_TRANSFER;
     buf[1] = sz;
-    memcpy(&buf[2], &wdata[offs], sz);
+
+    if (wdata)
+      memcpy(&buf[2], &wdata[offs], sz);
+    else
+      memset(&buf[2], 0, sz);
+
     dgw_cmd(buf, sizeof(buf), 2 + sz);
 
-    memcpy(&rdata[offs], &buf[1], sz);
+    if (rdata)
+      memcpy(&rdata[offs], &buf[1], sz);
 
     size -= sz;
     offs += sz;
