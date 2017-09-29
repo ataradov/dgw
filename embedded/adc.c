@@ -65,18 +65,11 @@ void adc_init(void)
   ADC->CTRLA.reg = ADC_CTRLA_ENABLE;
 }
 
-HAL_GPIO_PIN(X, B, 17)
-
 //-----------------------------------------------------------------------------
 int adc_read(void)
 {
-  HAL_GPIO_X_out();
-  HAL_GPIO_X_set();
-
   ADC->SWTRIG.reg = ADC_SWTRIG_START;
   while (0 == (ADC->INTFLAG.reg & ADC_INTFLAG_RESRDY));
-
-  HAL_GPIO_X_clr();
 
   return ADC->RESULT.reg;
 }

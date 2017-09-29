@@ -106,12 +106,15 @@ int i2c_init(int freq)
 //-----------------------------------------------------------------------------
 bool i2c_start(int addr)
 {
+  I2C_SERCOM->I2CM.INTFLAG.reg = SERCOM_I2CM_INTFLAG_ERROR;
+
   I2C_SERCOM->I2CM.ADDR.reg = addr;
 
   while (0 == (I2C_SERCOM->I2CM.INTFLAG.reg & SERCOM_I2CM_INTFLAG_MB) &&
          0 == (I2C_SERCOM->I2CM.INTFLAG.reg & SERCOM_I2CM_INTFLAG_SB));
 
-  if (I2C_SERCOM->I2CM.STATUS.reg & SERCOM_I2CM_STATUS_RXNACK)
+  if (I2C_SERCOM->I2CM.STATUS.reg & SERCOM_I2CM_STATUS_RXNACK ||
+      I2C_SERCOM->I2CM.INTFLAG.reg & SERCOM_I2CM_INTFLAG_ERROR)
   {
     I2C_SERCOM->I2CM.CTRLB.reg |= SERCOM_I2CM_CTRLB_CMD(3);
     return false;
@@ -135,7 +138,16 @@ bool i2c_stop(void)
 //-----------------------------------------------------------------------------
 bool i2c_read_byte(uint8_t *byte, bool last)
 {
-  while (0 == (I2C_SERCOM->I2CM.INTFLAG.reg & SERCOM_I2CM_INTFLAG_SB));
+  while (1)
+  {
+    int flags = I2C_SERCOM->I2CM.INTFLAG.reg;
+
+    if (flags & SERCOM_I2CM_INTFLAG_SB)
+      break;
+
+    if (flags & (SERCOM_I2CM_INTFLAG_MB | SERCOM_I2CM_INTFLAG_ERROR))
+      return false;
+  }
 
   if (last)
     I2C_SERCOM->I2CM.CTRLB.reg |= SERCOM_I2CM_CTRLB_ACKACT | SERCOM_I2CM_CTRLB_CMD(3);
@@ -152,7 +164,16 @@ bool i2c_write_byte(uint8_t byte)
 {
   I2C_SERCOM->I2CM.DATA.reg = byte;
 
-  while (0 == (I2C_SERCOM->I2CM.INTFLAG.reg & SERCOM_I2CM_INTFLAG_MB));
+  while (1)
+  {
+    int flags = I2C_SERCOM->I2CM.INTFLAG.reg;
+
+    if (flags & SERCOM_I2CM_INTFLAG_MB)
+      break;
+
+    if (flags & (SERCOM_I2CM_INTFLAG_SB | SERCOM_I2CM_INTFLAG_ERROR))
+      return false;
+  }
 
   if (I2C_SERCOM->I2CM.STATUS.reg & SERCOM_I2CM_STATUS_RXNACK)
   {
