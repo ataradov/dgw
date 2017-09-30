@@ -55,6 +55,9 @@ int spi_init(int freq, int mode)
   if (baud < 0)
     baud = 0;
 
+  if (baud > 255)
+    baud = 255;
+
   freq = F_CPU / (2 * (baud + 1));
 
   HAL_GPIO_MISO_in();
@@ -93,6 +96,7 @@ int spi_init(int freq, int mode)
 //-----------------------------------------------------------------------------
 void spi_ss(int state)
 {
+  while (!SPI_SERCOM->SPI.INTFLAG.bit.DRE);
   HAL_GPIO_SS_write(state);
 }
 
