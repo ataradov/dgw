@@ -33,8 +33,10 @@
 #include <string.h>
 #include <windows.h>
 #include <setupapi.h>          
-#include <ddk/hidsdi.h>
-#include <ddk/hidpi.h>
+//#include <ddk/hidsdi.h>
+//#include <ddk/hidpi.h>
+#include <hidsdi.h>
+#include <hidpi.h>
 #include "dgw.h"
 #include "main.h"
 
