@@ -33,10 +33,10 @@
 #include <string.h>
 #include <windows.h>
 #include <setupapi.h>          
-//#include <ddk/hidsdi.h>
-//#include <ddk/hidpi.h>
-#include <hidsdi.h>
-#include <hidpi.h>
+#include <ddk/hidsdi.h>
+#include <ddk/hidpi.h>
+//#include <hidsdi.h>
+//#include <hidpi.h>
 #include "dgw.h"
 #include "main.h"
 
@@ -68,7 +68,7 @@ int dgw_enumerate(dgw_t *dgws, int size)
 
   dev_info_data.cbSize = sizeof(dev_info_data);
 
-  for (int i = 0; i < size; i++)
+  for (int i = 0; rsize < size; i++)
   {
     if (FALSE == SetupDiEnumDeviceInterfaces(hid_dev_info, 0, &hid_guid, i, &dev_info_data))
       break;
@@ -89,6 +89,9 @@ int dgw_enumerate(dgw_t *dgws, int size)
     {
       wchar_t wstr[MAX_STRING_SIZE];
       char str[MAX_STRING_SIZE];
+
+      wstr[0] = 0;
+      str[0] = 0;
 
       hid_attr.Size = sizeof(hid_attr);
       HidD_GetAttributes(handle, &hid_attr);
