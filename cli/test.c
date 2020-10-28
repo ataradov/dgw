@@ -289,7 +289,8 @@ static void sd_card_test(void)
       uint32_t sn;
       int date;
 
-      strncpy(name, (char *)&cid[3], 5);
+      memcpy(name, (char *)&cid[3], 5);
+      name[5] = 0;
 
       sn = ((uint32_t)cid[9] << 24) | ((uint32_t)cid[10] << 16) | ((uint32_t)cid[11] << 8) | cid[12];
       date = ((uint16_t)cid[13] << 8) | cid[14];
@@ -315,6 +316,8 @@ static void sd_card_test(void)
 //-----------------------------------------------------------------------------
 static void adc_dac_test(void)
 {
+  printf("--- ADC/DAC Test ---\n");
+
   adc_init();
   dac_init();
 

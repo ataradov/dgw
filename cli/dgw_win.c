@@ -33,10 +33,10 @@
 #include <string.h>
 #include <windows.h>
 #include <setupapi.h>          
-#include <ddk/hidsdi.h>
-#include <ddk/hidpi.h>
-//#include <hidsdi.h>
-//#include <hidpi.h>
+//#include <ddk/hidsdi.h>
+//#include <ddk/hidpi.h>
+#include <hidsdi.h>
+#include <hidpi.h>
 #include "dgw.h"
 #include "main.h"
 
@@ -172,7 +172,7 @@ int dgw_get_report_size(void)
 int dgw_cmd(uint8_t *data, int size, int rsize)
 {
   uint8_t cmd = data[0];
-  unsigned long res;
+  DWORD res;
 
   memset(hid_buffer, 0xff, report_size + 1);
 
